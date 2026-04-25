@@ -28,7 +28,7 @@ Note: I will put this in here just in case there I ever need it again.
 
 Recently I moved to the built-in package manager (`nvim.pack`), and right now
 is the first time I have needed to use local plugins since moving to nvim.pack.
-Well it turns out that local plugins are not very well supported[1]. The
+Well it turns out that local plugins are not very well supported[^1]. The
 explanation given is fine and I don't mind the thoughts in there. However using
 `file:///` to develop plugins is not very nice, specially since it will only
 pull committed code and I will have to do `vim.pack.update()` every time I want
