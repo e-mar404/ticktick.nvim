@@ -37,4 +37,4 @@ is what I am using. I made a symlink from this dir to
 `~/.local/share/nvim/site/pack/personal/start/ticktick.nvim`. Now it gets loaded
 automatically.
 
-[1]: https://github.com/neovim/neovim/issues/34765
+[^1]: https://github.com/neovim/neovim/issues/34765
