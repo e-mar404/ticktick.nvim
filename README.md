@@ -18,13 +18,42 @@ What features do I want?
 
 If I do the above that will be a good enough proof of concept for me.
 
+### Road map 
+
+This will act as my checklist on the technical road map and how I am going to
+implement the above.
+
+1. **Access token**
+
+There needs to be a way to input client_id and client_secret that you get from
+the (ticktick development center)[https://developer.ticktick.com/manage]. This
+is required to get the access token and do anything with the api so lets start
+with that. This is tricky since I cant just add it as an opt in `setup()` since
+that will usually get committed to user's dotfiles. It will have to be handled
+on client and then stored on disk, outside the dotfiles, most likely
+`XDG_DATA_DIR`.
+
+2. **Start on list view user_command**
+
+After Im able to get the access to the access token then I should get all the
+lists (called projects on the api docs) and make a ui to show the different 
+lists. Which I am thinking of doing one "tab" per list (a tab just being a
+highlighted title with a list view), on a new window.
+
+3. **Fetch tasks that belong to each list**
+
+4. **Add check box  and actions on tasks**
+
+5. **Repeat but for a habits view user_command**
+
 ## Requirements
 
 - A TickTick account
 
-### Local development
+### Notes on local development
 
-Note: I will put this in here just in case there I ever need it again.
+Note: I will put this in here just. Not expecting public contributions on this 
+so mainly just for me.
 
 Recently I moved to the built-in package manager (`nvim.pack`), and right now
 is the first time I have needed to use local plugins since moving to nvim.pack.
