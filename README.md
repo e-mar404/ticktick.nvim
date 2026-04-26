@@ -37,4 +37,7 @@ is what I am using. I made a symlink from this dir to
 `~/.local/share/nvim/site/pack/personal/start/ticktick.nvim`. Now it gets loaded
 automatically.
 
+Run the script [./link.sh](./link.sh) to get started with local development.
+Make sure to run the script at the root of this repo, it uses `pwd`.
+
 [^1]: https://github.com/neovim/neovim/issues/34765
