@@ -1,11 +1,24 @@
----@class TickTickConfig
+---@class Credentials
 ---@field client_id string
 ---@field client_secret string
 
+---@class TickTickConfig
+---@field creds Credentials
+---@field load function 
+---@field get_creds function
+
 local utils = require "ticktick.utils"
+
+---@type TickTickConfig
 local config = {}
 
-config.editor = function ()
+---@return boolean
+config.load = function ()
+  -- this is not implemented yet, setting to hard coded so it acts like there is no local config
+  return false 
+end
+
+config.get_creds = function ()
   local instructions = {
     "How to create credentials to use for TickTick api.",
     "",
@@ -58,17 +71,15 @@ config.editor = function ()
 
     vim.schedule(function ()
       local lines = vim.api.nvim_buf_get_lines(buf, 6, 8, false)
-      local creds = utils._parse_credentials(lines)
+      config.creds = utils._parse_credentials(lines)
 
-      if creds.client_id == "" then
+      if config.creds.client_id == "" then
         error("No Client ID was set, please add it")
-      elseif creds.client_secret == "" then
+      elseif config.creds.client_secret == "" then
         error("No Client Secret was set, please add it")
       else
-        print(vim.inspect(creds))
         vim.api.nvim_win_close(win, true)
       end
-
     end)
   end, { buffer = buf })
 

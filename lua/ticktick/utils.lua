@@ -3,9 +3,9 @@
 local utils = {}
 
 ---@param lines string[]
----@return TickTickConfig
+---@return Credentials 
 utils._parse_credentials = function (lines)
-  ---@type TickTickConfig
+  ---@type Credentials 
   local creds = {}
 
   local start, _ = lines[1]:find(":")
