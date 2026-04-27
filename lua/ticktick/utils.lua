@@ -1,4 +1,4 @@
----@module  "ticktick.config" 
+---@module  "ticktick.api" 
 
 local utils = {}
 
@@ -15,6 +15,12 @@ utils._parse_credentials = function (lines)
   creds.client_secret = lines[2]:sub(start + 1):gsub(' ', '')
 
   return creds
+end
+
+---@return string
+utils._generate_new_state = function ()
+  -- TODO: temp, make sure to create a unique state and save it to disk
+  return "state"
 end
 
 return utils
