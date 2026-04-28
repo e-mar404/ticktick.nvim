@@ -2,7 +2,7 @@ local uv = vim.uv
 
 local server = {}
 
-server.start = function ()
+server.start = function (on_code)
   local s = uv.new_tcp()
   assert(s, "unable to start tcp server")
 
@@ -30,7 +30,7 @@ server.start = function ()
         local state = url:sub(state_end + 1, #url)
 
         vim.schedule(function ()
-          vim.notify(code .. " " .. state, vim.log.levels.DEBUG)
+          on_code(code, state)
         end)
       end
 

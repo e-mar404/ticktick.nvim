@@ -29,7 +29,10 @@ api.get_access_token = function (creds)
     "&response_type=code")
 
   vim.notify("Sign in on browser tab", vim.log.levels.INFO)
-  server.start()
+
+  server.start(function (code)
+    vim.notify(code, vim.log.levels.DEBUG)
+  end)
 
   return "access_token"
 end
