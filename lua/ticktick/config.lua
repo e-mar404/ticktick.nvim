@@ -13,7 +13,11 @@ config.load_access_token = function ()
     "How to create credentials to use for TickTick api.",
     "",
     "Go to https://developer.ticktick.com/manage and create a new app.",
-    "Set the name of the app to `ticktick.nvim` and click next.",
+    "Make sure to set the following fields:",
+    "",
+    "\t- Name of the app to `ticktick.nvim`",
+    "\t- Redirect URI to `http://127.0.0.1:8080`",
+    "",
     "Open the newly created app and add the Client ID and Secret bellow.",
     "",
     "Client ID: ",
@@ -37,7 +41,7 @@ config.load_access_token = function ()
     vim.cmd('stopinsert')
 
     vim.schedule(function ()
-      local lines = vim.api.nvim_buf_get_lines(buf, 6, 8, false)
+      local lines = vim.api.nvim_buf_get_lines(buf, 10, 12, false)
 
       ---@type Credentials
       local creds = utils._parse_credentials(lines)
@@ -77,7 +81,7 @@ config.load_access_token = function ()
   }
 
   local win = vim.api.nvim_open_win(buf, true, win_config)
-  vim.api.nvim_win_set_cursor(win, {7, 10})
+  vim.api.nvim_win_set_cursor(win, {11, 10})
   vim.cmd('startinsert!')
 end
 

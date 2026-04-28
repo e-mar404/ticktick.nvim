@@ -15,10 +15,22 @@ server.start = function ()
     assert(client, "unable to start tcp client")
 
     s:accept(client)
+    -- TODO: this executes twice, once for the actual redirect and another for the favicon, dont think its a big deal but I end up with the correct state and code at the end so prob fine
     client:read_start(function(read_err, chunk)
       assert(not read_err, read_err)
 
-      -- TODO: hard coded values, will need to account for a few errors
+      local url = chunk:match("%/%?%S+")
+
+      local _, code_end = assert(url:find("code="))
+      local sep = url:find("&")
+      local _, state_end = assert(url:find("state="))
+
+      local code = url:sub(code_end + 1, sep - 1)
+      local state = url:sub(state_end + 1, #url)
+
+      print("code: " .. code .. "\nstate: " .. state)
+
+      -- TODO: hard coded values, will need to account for a few errors (like the asserts above)
       local body = "successful login, you may close the browser"
 
       local response = table.concat({
@@ -32,10 +44,8 @@ server.start = function ()
       client:write(response, function ()
         client:shutdown(function ()
           client:close()
-        end)
 
-        -- TODO: extract the code and find a way to get it back to the api.get_access_token function
-        print("received chunk: " .. chunk)
+        end)
       end)
 
       client:read_stop()
