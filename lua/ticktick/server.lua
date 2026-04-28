@@ -21,14 +21,18 @@ server.start = function ()
 
       local url = chunk:match("%/%?%S+")
 
-      local _, code_end = assert(url:find("code="))
-      local sep = url:find("&")
-      local _, state_end = assert(url:find("state="))
+      if url then
+        local _, code_end = assert(url:find("code="))
+        local sep = url:find("&")
+        local _, state_end = assert(url:find("state="))
 
-      local code = url:sub(code_end + 1, sep - 1)
-      local state = url:sub(state_end + 1, #url)
+        local code = url:sub(code_end + 1, sep - 1)
+        local state = url:sub(state_end + 1, #url)
 
-      print("code: " .. code .. "\nstate: " .. state)
+        vim.schedule(function ()
+          vim.notify(code .. " " .. state, vim.log.levels.DEBUG)
+        end)
+      end
 
       -- TODO: hard coded values, will need to account for a few errors (like the asserts above)
       local body = "successful login, you may close the browser"
@@ -44,7 +48,6 @@ server.start = function ()
       client:write(response, function ()
         client:shutdown(function ()
           client:close()
-
         end)
       end)
 
@@ -52,7 +55,7 @@ server.start = function ()
     end)
   end)
 
-  print("TCP server listening at 127.0.0.1:8080")
+  vim.notify("TCP server listening at 127.0.0.1:8080", vim.log.levels.DEBUG)
 end
 
 return server
