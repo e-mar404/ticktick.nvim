@@ -1,14 +1,13 @@
----@class TickTickConfig
----@field load_access_token function
+local utils = require 'ticktick.utils'
 
-local utils = require "ticktick.utils"
-local api   = require "ticktick.api"
+---@class Credentials
+---@field client_id string
+---@field client_secret string
 
----@type TickTickConfig
-local config = {}
+local auth = {}
 
-config.load_access_token = function ()
-  -- TODO: for now it assumes that no access token is saved locally, so it will always ask for client id and secret
+auth.login = function (chan)
+  -- get credentials from user
   local instructions = {
     "How to create credentials to use for TickTick api.",
     "",
@@ -34,29 +33,23 @@ config.load_access_token = function ()
   vim.api.nvim_set_option_value('swapfile', false, {buf=buf})
   vim.api.nvim_buf_set_lines(buf, 0, -1, false, instructions)
 
-  -- TODO: maybe extract this function out, something like a on_submit() and move the keymap somewhere else
-  -- This will need to take into account that it needs to be after creating the buf
-  -- I can potentially do a prep_buf(buf) that will create the keymap and add the sensible settings
-  vim.keymap.set({'i', 'n'}, '<CR>', function ()
+  -- send request to go server to get access token in a keymap
+  vim.keymap.set({ 'n', 'i' }, '<CR>', function ()
     vim.cmd('stopinsert')
 
     vim.schedule(function ()
       local lines = vim.api.nvim_buf_get_lines(buf, 10, 12, false)
+      local creds = utils._extract_creds(lines)
+      local reply = vim.rpcrequest(chan, "Auth.Login", creds)
 
-      ---@type Credentials
-      local creds = utils._parse_credentials(lines)
-
-      if creds.client_id == "" then
-        error("No Client ID was set, please add it")
-      elseif creds.client_secret == "" then
-        error("No Client Secret was set, please add it")
-      else
-        vim.api.nvim_win_close(0, true)
-
-        api.get_access_token(creds)
+      local msg = "request did not succeed"
+      if reply then
+        msg = "request succeeded"
       end
+
+      vim.notify(msg, vim.log.levels.DEBUG)
     end)
-  end, { buffer = buf })
+  end, { buf=buf })
 
   local width, height = 0, #instructions
   for _, line in pairs(instructions) do
@@ -82,7 +75,8 @@ config.load_access_token = function ()
 
   local win = vim.api.nvim_open_win(buf, true, win_config)
   vim.api.nvim_win_set_cursor(win, {11, 10})
+
   vim.cmd('startinsert!')
 end
 
-return config
+return auth

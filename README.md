@@ -1,6 +1,7 @@
 # ticktick.nvim
 
-A Neovim plugin for interacting with the TickTick API directly from your editor.
+A Neovim remote plugin written in go for interacting with the TickTick API 
+directly from your editor.
 
 > ⚠️ **Disclaimer**  
 > This is an unofficial plugin.  
@@ -25,20 +26,7 @@ implement the above.
 
 1. **Access token**
 
-There needs to be a way to input client_id and client_secret that you get from
-the (ticktick development center)[https://developer.ticktick.com/manage]. This
-is required to get the access token and do anything with the api so lets start
-with that. This is tricky since I cant just add it as an opt in `setup()` since
-that will usually get committed to user's dotfiles. It will have to be handled
-on client and then stored on disk, outside the dotfiles, most likely
-`XDG_DATA_DIR`.
-
 2. **Start on list view user_command**
-
-After Im able to get the access to the access token then I should get all the
-lists (called projects on the api docs) and make a ui to show the different 
-lists. Which I am thinking of doing one "tab" per list (a tab just being a
-highlighted title with a list view), on a new window.
 
 3. **Fetch tasks that belong to each list**
 
@@ -49,6 +37,8 @@ highlighted title with a list view), on a new window.
 ## Requirements
 
 - A TickTick account
+- go
+- make
 
 ### Notes on local development
 
