@@ -38,6 +38,8 @@ auth.login = function (chan)
     vim.cmd('stopinsert')
 
     vim.schedule(function ()
+      print("Sign in to TickTick.com on your browser")
+
       local lines = vim.api.nvim_buf_get_lines(buf, 10, 12, false)
       local creds = utils._extract_creds(lines)
       local reply = vim.rpcrequest(chan, "Auth.Login", creds)

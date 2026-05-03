@@ -1,6 +1,8 @@
 package main
 
 import (
+	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -8,72 +10,103 @@ import (
 )
 
 const (
-	TickTickAuthURL = "https://ticktick.com/oauth/authorize"
+	TickTickOAuthURL = "https://ticktick.com/oauth"
 )
 
-type Auth struct {}
+var (
+	ErrNoCodeProvided   = errors.New("No code given by redirect")
+	ErrStateMismatch    = errors.New("Either state is missing or there is a missmatch on state passed by redirect")
+	ErrTokenNotRecieved = errors.New("Access token not received from TickTick")
+)
+
+type Auth struct{}
 
 type AuthArgs struct {
-	ClientID string `json:"client_id"`
+	ClientID     string `json:"client_id"`
 	ClientSecret string `json:"client_secret"`
 }
 
+type TickTickOAuthRes struct {
+	Code string
+	Err  error
+}
+
+type TickTickTokenRes struct {
+	AccessToken      string `json:"access_token"`
+	Error            string `json:"error"`
+	ErrorDescription string `json:"error_description"`
+}
+
+// TODO: reply should be of a type that will allow for errors to be passed and displayed on neovim lua side
 func (a *Auth) Login(args *AuthArgs, reply *bool) error {
-	// redirect user to ticktick auth page
-	// needs client_id, scope, state, redirect_uri, and response_type
-	urlValues := url.Values {}
-	urlValues.Add("client_id", args.ClientID)
-	urlValues.Add("scope", "tasks:write tasks:read")
-	urlValues.Add("state", "state") // TODO: needs actual random state
-	urlValues.Add("redirect_uri", "http://127.0.0.1:9090/callback") // TODO: needs to be an env var
-	urlValues.Add("response_type", "code")
+	// TODO: save auth creds here?
 
-	openURL(TickTickAuthURL + "?" + urlValues.Encode())
-	
-	// wait for callback by blocking on a channel
-	callback := make(chan bool)
-	
-	go callbackServer(callback)
+	if err := openOAuthPage(args.ClientID); err != nil {
+		*reply = false
+		log.Printf("unable to open OAuth Page: %v\n", err)
+	}
 
-	res := <- callback
-	*reply = res
+	// wait for code from OAuth page by blocking on a channel
+	callback := make(chan TickTickOAuthRes)
+	go startCallbackServer(callback)
+	oauthRes := <-callback
 
+	if oauthRes.Err != nil {
+		*reply = false
+		fmt.Printf("[Auth.Login] set result on reply to %v\n", *reply)
+		return oauthRes.Err
+	}
+
+	// TODO: make POST call to TickTickOAuthURL + /token to get access token
+	tokenRes := fetchAccessToken(args.ClientID, args.ClientID, oauthRes.Code)
+	log.Printf("got access token: %s\n", tokenRes.AccessToken)
+
+	// TODO: check for tokenRes.Err
+
+	*reply = true
 	fmt.Printf("[Auth.Login] set result on reply to %v\n", *reply)
 
 	return nil
 }
 
-func callbackServer(callback chan bool) {
-	mux := http.NewServeMux()
+func fetchAccessToken(clientID, clientSecret, code string) TickTickTokenRes {
+	urlValues := url.Values{}
 
-	mux.HandleFunc("/callback", func(w http.ResponseWriter, r *http.Request) {
+	urlValues.Add("client_id", clientID)
+	urlValues.Add("client_secret", clientSecret)
+	urlValues.Add("code", code)
+	urlValues.Add("grant_type", "authorization_code")
+	urlValues.Add("scope", "tasks:write tasks:read")
+	urlValues.Add("redirect_uri", "http://127.0.0.1:9090/callback")
 
-		code := r.URL.Query().Get("code")
-		if code == "" {
-			log.Printf("no code found on the redirect_uri\n")
-			callback <- false
-			w.WriteHeader(http.StatusBadRequest)
+	u := TickTickOAuthURL + "/token?" + urlValues.Encode()
+
+	req, err := http.NewRequest("POST", u, nil)
+	if err != nil {
+		return TickTickTokenRes{
+			Error: err.Error(),
 		}
-
-		state := r.URL.Query().Get("state") 
-		if state == "" {
-			log.Printf("no state found on the redirect_uri\n")
-			callback <- false
-			w.WriteHeader(http.StatusBadRequest)
-		}
-
-		log.Printf("code: %s, state: %s\n", code, state)
-		callback <- true
-
-		res := []byte(`<html>
-	<p>you can close this tab</p>
-</html>`)
-
-		w.Write(res)
-	})
-
-	log.Printf("callback server started on :9090\n")
-	if err := http.ListenAndServe(":9090", mux); err != nil {
-		log.Printf("error on callback server: %v\n", err)
 	}
+
+	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
+
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return TickTickTokenRes{
+			Error: err.Error(),
+		}
+	}
+
+	defer res.Body.Close()
+
+	tokenRes := TickTickTokenRes{}
+
+	decoder := json.NewDecoder(res.Body)
+	if err := decoder.Decode(&tokenRes); err != nil {
+		return TickTickTokenRes{
+			Error: err.Error(),
+		}
+	}
+
+	return tokenRes
 }
