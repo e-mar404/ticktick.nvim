@@ -6,8 +6,10 @@ local utils = require 'ticktick.utils'
 
 local auth = {}
 
-auth.login = function (chan)
-  -- get credentials from user
+auth.login = function ()
+  local chan = utils._get_chan()
+  local config = require('ticktick').config
+
   local instructions = {
     "How to create credentials to use for TickTick api.",
     "",
@@ -15,7 +17,7 @@ auth.login = function (chan)
     "Make sure to set the following fields:",
     "",
     "\t- Name of the app to `ticktick.nvim`",
-    "\t- Redirect URI to `http://127.0.0.1:8080`",
+    "\t- Redirect URI to `http://127.0.0.1" .. config.rpc_port .. "`",
     "",
     "Open the newly created app and add the Client ID and Secret bellow.",
     "",
@@ -33,12 +35,12 @@ auth.login = function (chan)
   vim.api.nvim_set_option_value('swapfile', false, {buf=buf})
   vim.api.nvim_buf_set_lines(buf, 0, -1, false, instructions)
 
-  -- send request to go server to get access token in a keymap
   vim.keymap.set({ 'n', 'i' }, '<CR>', function ()
     vim.cmd('stopinsert')
 
+    print("Sign in to TickTick.com on your browser")
+
     vim.schedule(function ()
-      print("Sign in to TickTick.com on your browser")
 
       local lines = vim.api.nvim_buf_get_lines(buf, 10, 12, false)
       local creds = utils._extract_creds(lines)

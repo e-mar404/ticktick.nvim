@@ -17,4 +17,15 @@ utils._extract_creds = function (lines)
   return creds
 end
 
+utils._get_chan = function ()
+  if utils.chan then
+    return utils.chan
+  end
+
+  local addrs = '127.0.0.1' .. require('ticktick').config.rpc_port
+  utils.chan = vim.fn.sockconnect('tcp', addrs, { rpc = true })
+
+  return utils.chan
+end
+
 return utils

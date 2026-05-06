@@ -18,6 +18,7 @@ func startRPCServer() {
 	rpc.Register(auth)
 
 	// TODO get port from env var, but needs to be coordinated with the lua implementation
+	// instead of env var just use lua setup function duhhh, this is a neovim plugin, config will come from lua
 	log.Println("listening on :8080")
 	listener, err := net.Listen("tcp", ":8080")
 	if err != nil {
