@@ -17,10 +17,8 @@ func startRPCServer() {
 	auth := new(Auth)
 	rpc.Register(auth)
 
-	// TODO get port from env var, but needs to be coordinated with the lua implementation
-	// instead of env var just use lua setup function duhhh, this is a neovim plugin, config will come from lua
-	log.Println("listening on :8080")
-	listener, err := net.Listen("tcp", ":8080")
+	log.Printf("listening on %s\n", RPC_PORT)
+	listener, err := net.Listen("tcp", RPC_PORT)
 	if err != nil {
 		log.Fatalln("Error listening: ", err)
 	}
@@ -41,7 +39,7 @@ func startRPCServer() {
 func startCallbackServer(callback chan TickTickOAuthRes) {
 	mux := http.NewServeMux()
 	srv := &http.Server{
-		Addr:        ":9090",
+		Addr:        CALLBACK_PORT,
 		Handler:     mux,
 		IdleTimeout: 5 * time.Minute,
 		ReadTimeout: 5 * time.Minute,
@@ -87,7 +85,7 @@ func startCallbackServer(callback chan TickTickOAuthRes) {
 		}()
 	})
 
-	log.Printf("callback server started on :9090\n")
+	log.Printf("callback server started on %s\n", CALLBACK_PORT)
 	if err := srv.ListenAndServe(); err != nil {
 		log.Printf("error on callback server: %v\n", err)
 	}

@@ -31,13 +31,13 @@ type TickTickOAuthRes struct {
 	Err  error
 }
 
+// TODO: at some point this will also need to get the "expires_in" so it can be saved and we can query the saved access token to see if it needs a refresh
 type TickTickTokenRes struct {
 	AccessToken      string `json:"access_token"`
 	Error            string `json:"error"`
 	ErrorDescription string `json:"error_description"`
 }
 
-// TODO: reply should be of a type that will allow for errors to be passed and displayed on neovim lua side
 func (a *Auth) Login(args *AuthArgs, reply *bool) error {
 	// TODO: save auth creds here?
 
@@ -46,7 +46,6 @@ func (a *Auth) Login(args *AuthArgs, reply *bool) error {
 		log.Printf("unable to open OAuth Page: %v\n", err)
 	}
 
-	// wait for code from OAuth page by blocking on a channel
 	callback := make(chan TickTickOAuthRes)
 	go startCallbackServer(callback)
 	oauthRes := <-callback
@@ -57,27 +56,33 @@ func (a *Auth) Login(args *AuthArgs, reply *bool) error {
 		return oauthRes.Err
 	}
 
-	// TODO: make POST call to TickTickOAuthURL + /token to get access token
-	tokenRes := fetchAccessToken(args.ClientID, args.ClientID, oauthRes.Code)
+	tokenRes := fetchAccessToken(args.ClientID, args.ClientSecret, oauthRes.Code)
 	log.Printf("got access token: %s\n", tokenRes.AccessToken)
 
-	// TODO: check for tokenRes.Err
+	if tokenRes.Error != "" {
+		*reply = false
+		fmt.Printf("[Auth.Login] set result on reply to %v\n", *reply)
+		log.Printf("Err: %s\nDesc: %s\n", tokenRes.Error, tokenRes.ErrorDescription)
+		return fmt.Errorf("%s", tokenRes.Error)
+	}
 
+	// TODO: once access token is successfully gotten save it to disk along side the expires_in field
 	*reply = true
-	fmt.Printf("[Auth.Login] set result on reply to %v\n", *reply)
+	log.Printf("[Auth.Login] set result on reply to %v\n", *reply)
 
 	return nil
 }
 
 func fetchAccessToken(clientID, clientSecret, code string) TickTickTokenRes {
 	urlValues := url.Values{}
+	redirectURI := fmt.Sprintf("http://127.0.0.1%s/callback", CALLBACK_PORT)
 
 	urlValues.Add("client_id", clientID)
 	urlValues.Add("client_secret", clientSecret)
 	urlValues.Add("code", code)
 	urlValues.Add("grant_type", "authorization_code")
 	urlValues.Add("scope", "tasks:write tasks:read")
-	urlValues.Add("redirect_uri", "http://127.0.0.1:9090/callback")
+	urlValues.Add("redirect_uri", redirectURI)
 
 	u := TickTickOAuthURL + "/token?" + urlValues.Encode()
 
@@ -97,10 +102,15 @@ func fetchAccessToken(clientID, clientSecret, code string) TickTickTokenRes {
 		}
 	}
 
+	if res.StatusCode != http.StatusOK {
+		return TickTickTokenRes{
+			Error: res.Status,
+		}
+	}
+
 	defer res.Body.Close()
 
 	tokenRes := TickTickTokenRes{}
-
 	decoder := json.NewDecoder(res.Body)
 	if err := decoder.Decode(&tokenRes); err != nil {
 		return TickTickTokenRes{

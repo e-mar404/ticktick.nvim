@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"net/url"
 	"os/exec"
 	"runtime"
@@ -23,11 +24,12 @@ func openURL(url string) error {
 }
 
 func openOAuthPage(clientID string) error {
+	redirectURI := fmt.Sprintf("http://127.0.0.1%s/callback", CALLBACK_PORT)
 	urlValues := url.Values{}
 	urlValues.Add("client_id", clientID)
 	urlValues.Add("scope", "tasks:write tasks:read")
-	urlValues.Add("state", "state")                                 // TODO: needs actual random state
-	urlValues.Add("redirect_uri", "http://127.0.0.1:9090/callback") // TODO: needs to be an env var
+	urlValues.Add("state", "state") // TODO: needs actual random state
+	urlValues.Add("redirect_uri", redirectURI)
 	urlValues.Add("response_type", "code")
 
 	return openURL(TickTickOAuthURL + "/authorize?" + urlValues.Encode())
