@@ -14,8 +14,7 @@ import (
 var mh codec.MsgpackHandle
 
 func startRPCServer() {
-	auth := new(Auth)
-	rpc.Register(auth)
+	rpc.Register(NewAuthService())
 
 	log.Printf("listening on %s\n", RPC_PORT)
 	listener, err := net.Listen("tcp", RPC_PORT)
@@ -59,6 +58,7 @@ func startCallbackServer(callback chan TickTickOAuthRes) {
 
 		state := r.URL.Query().Get("state")
 		if state == "" {
+			// TODO: this is where the state gets checked to see if it matches the earlier one
 			log.Printf("no state found on the redirect_uri\n")
 
 			callback <- TickTickOAuthRes{
@@ -87,6 +87,8 @@ func startCallbackServer(callback chan TickTickOAuthRes) {
 
 	log.Printf("callback server started on %s\n", CALLBACK_PORT)
 	if err := srv.ListenAndServe(); err != nil {
-		log.Printf("error on callback server: %v\n", err)
+		if err != http.ErrServerClosed {
+			log.Printf("error on callback server: %v\n", err)
+		}
 	}
 }

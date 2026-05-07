@@ -15,11 +15,13 @@ const (
 
 var (
 	ErrNoCodeProvided   = errors.New("No code given by redirect")
-	ErrStateMismatch    = errors.New("Either state is missing or there is a missmatch on state passed by redirect")
+	ErrStateMismatch    = errors.New("Either state is missing or there is a mismatch on state passed by redirect")
 	ErrTokenNotRecieved = errors.New("Access token not received from TickTick")
 )
 
-type Auth struct{}
+type Auth struct {
+	store *AuthStore
+}
 
 type AuthArgs struct {
 	ClientID     string `json:"client_id"`
@@ -31,16 +33,14 @@ type TickTickOAuthRes struct {
 	Err  error
 }
 
-// TODO: at some point this will also need to get the "expires_in" so it can be saved and we can query the saved access token to see if it needs a refresh
 type TickTickTokenRes struct {
 	AccessToken      string `json:"access_token"`
+	ExpiresIn        int    `json:"expires_in"`
 	Error            string `json:"error"`
 	ErrorDescription string `json:"error_description"`
 }
 
 func (a *Auth) Login(args *AuthArgs, reply *bool) error {
-	// TODO: save auth creds here?
-
 	if err := openOAuthPage(args.ClientID); err != nil {
 		*reply = false
 		log.Printf("unable to open OAuth Page: %v\n", err)
@@ -66,11 +66,33 @@ func (a *Auth) Login(args *AuthArgs, reply *bool) error {
 		return fmt.Errorf("%s", tokenRes.Error)
 	}
 
-	// TODO: once access token is successfully gotten save it to disk along side the expires_in field
+	state := AuthState{
+		ClientID:     args.ClientID,
+		ClientSecret: args.ClientSecret,
+		AccessToken:  tokenRes.AccessToken,
+		ExpiresIn:    tokenRes.ExpiresIn,
+	}
+
+	if err := a.store.save(state); err != nil {
+		log.Printf("unable to save login credentials: %v\n", err)
+		return err
+	}
+
 	*reply = true
 	log.Printf("[Auth.Login] set result on reply to %v\n", *reply)
 
 	return nil
+}
+
+func NewAuthService() *Auth {
+	store := NewAuthStore()
+	if store == nil {
+		return nil
+	}
+
+	return &Auth{
+		store: store,
+	}
 }
 
 func fetchAccessToken(clientID, clientSecret, code string) TickTickTokenRes {
