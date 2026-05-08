@@ -1,6 +1,8 @@
 package main
 
 import (
+	"crypto/rand"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -15,7 +17,7 @@ const (
 
 var (
 	ErrNoCodeProvided   = errors.New("No code given by redirect")
-	ErrStateMismatch    = errors.New("Either state is missing or there is a mismatch on state passed by redirect")
+	ErrStateMismatch    = errors.New("Either state is missing or state passed by redirect is not the one set by the tickgo server")
 	ErrTokenNotRecieved = errors.New("Access token not received from TickTick")
 )
 
@@ -41,13 +43,15 @@ type TickTickTokenRes struct {
 }
 
 func (a *Auth) Login(args *AuthArgs, reply *bool) error {
-	if err := openOAuthPage(args.ClientID); err != nil {
+	state := generateState()
+
+	if err := openOAuthPage(args.ClientID, state); err != nil {
 		*reply = false
 		log.Printf("unable to open OAuth Page: %v\n", err)
 	}
 
 	callback := make(chan TickTickOAuthRes)
-	go startCallbackServer(callback)
+	go startCallbackServer(callback, state)
 	oauthRes := <-callback
 
 	if oauthRes.Err != nil {
@@ -66,14 +70,14 @@ func (a *Auth) Login(args *AuthArgs, reply *bool) error {
 		return fmt.Errorf("%s", tokenRes.Error)
 	}
 
-	state := AuthState{
+	authState := AuthState{
 		ClientID:     args.ClientID,
 		ClientSecret: args.ClientSecret,
 		AccessToken:  tokenRes.AccessToken,
 		ExpiresIn:    tokenRes.ExpiresIn,
 	}
 
-	if err := a.store.save(state); err != nil {
+	if err := a.store.save(authState); err != nil {
 		log.Printf("unable to save login credentials: %v\n", err)
 		return err
 	}
@@ -93,6 +97,12 @@ func NewAuthService() *Auth {
 	return &Auth{
 		store: store,
 	}
+}
+
+func generateState() string {
+	buf := make([]byte, 32)
+	rand.Read(buf)
+	return base64.URLEncoding.EncodeToString(buf)
 }
 
 func fetchAccessToken(clientID, clientSecret, code string) TickTickTokenRes {

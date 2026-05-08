@@ -35,7 +35,7 @@ func startRPCServer() {
 	}
 }
 
-func startCallbackServer(callback chan TickTickOAuthRes) {
+func startCallbackServer(callback chan TickTickOAuthRes, state string) {
 	mux := http.NewServeMux()
 	srv := &http.Server{
 		Addr:        CALLBACK_PORT,
@@ -56,10 +56,9 @@ func startCallbackServer(callback chan TickTickOAuthRes) {
 			w.WriteHeader(http.StatusBadRequest)
 		}
 
-		state := r.URL.Query().Get("state")
-		if state == "" {
-			// TODO: this is where the state gets checked to see if it matches the earlier one
-			log.Printf("no state found on the redirect_uri\n")
+		callbackState := r.URL.Query().Get("state")
+		if callbackState != state || callbackState == "" {
+			log.Printf("incorrect state. Expected: %s, got: %s\n", state, callbackState)
 
 			callback <- TickTickOAuthRes{
 				Err: ErrStateMismatch,
@@ -68,7 +67,7 @@ func startCallbackServer(callback chan TickTickOAuthRes) {
 			w.WriteHeader(http.StatusBadRequest)
 		}
 
-		log.Printf("code: %s, state: %s\n", code, state)
+		log.Printf("code: %s, state: %s\n", code, callbackState)
 
 		callback <- TickTickOAuthRes{
 			Code: code,
