@@ -1,7 +1,7 @@
 # https://just.systems
 
-dev:
-  air
+dev *args:
+  air -- --rpcPort=:8080 --callbackPort=:9090 {{args}}
 
 lua-todo:
   -grep "TODO" -rn ./lua ./plugin --color=always

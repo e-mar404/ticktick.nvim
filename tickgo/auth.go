@@ -41,6 +41,10 @@ type TickTickTokenRes struct {
 	ErrorDescription string `json:"error_description"`
 }
 
+func init() {
+	rpcServices["Auth"] = NewAuthService()
+}
+
 func (a *Auth) Login(args *AuthArgs, reply *bool) error {
 	state := generateState()
 

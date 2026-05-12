@@ -10,20 +10,27 @@ import (
 	"github.com/ugorji/go/codec"
 )
 
-var mh codec.MsgpackHandle
+var (
+	mh          codec.MsgpackHandle
+	rpcServices = make(map[string]any)
+)
 
 func startRPCServer() {
-	l.Info("main rpc server started", "port", RPC_PORT)
+	server := rpc.NewServer()
+
+	for name, service := range rpcServices {
+		l.Debug("registered service on rpc server", "name", name)
+		server.Register(service)
+	}
+
+	l.Info("starting server")
 	listener, err := net.Listen("tcp", RPC_PORT)
 	if err != nil {
 		l.Fatalf("could not listen to port: %v\n", err)
 	}
 	defer listener.Close()
 
-	// TODO: there needs to be a different place were the different structs/services get registered
-	l.Debug("service registered", "service", "Auth")
-	rpc.Register(NewAuthService())
-
+	l.Info("open to connections", "port", RPC_PORT)
 	for {
 		conn, err := listener.Accept()
 
@@ -32,7 +39,7 @@ func startRPCServer() {
 		}
 
 		rpcCodec := codec.MsgpackSpecRpc.ServerCodec(conn, &mh)
-		go rpc.ServeCodec(rpcCodec)
+		go server.ServeCodec(rpcCodec)
 	}
 }
 
