@@ -1,7 +1,7 @@
 # ticktick.nvim
 
-A Neovim remote plugin written in go for interacting with the TickTick API 
-directly from your editor.
+A Neovim lua plugin using a go server to interact with the TickTick API directly
+from neovim.
 
 > ⚠️ **Disclaimer**  
 > This is an unofficial plugin.  
@@ -12,10 +12,10 @@ directly from your editor.
 
 What features do I want?
 
+- [ ] manage tasks (crud operations)
+- [ ] ability to see different lists in their own view 
 - [ ] habit check in
-- [ ] manage tasks (create, read, update, delete)
-- [ ] each task list will have a tab of its own
-- [ ] handle api key and storage through neovim, and not deal with .env files
+- [ ] filtering / grep of tasks
 
 If I do the above that will be a good enough proof of concept for me.
 
@@ -24,21 +24,24 @@ If I do the above that will be a good enough proof of concept for me.
 This will act as my checklist on the technical road map and how I am going to
 implement the above.
 
-1. **Access token**
+1. **Access token** ✅
 
-2. **Start on list view user_command**
+Access token is able to be retrieved and saved to disk by adding the client ID
+and secret to a pop up menu in neovim.
 
-3. **Fetch tasks that belong to each list**
+2. **fetch all available tasks and display them on a new buffer**
+
+3. **Fetch tasks that belong to a specific list**
 
 4. **Add check box  and actions on tasks**
 
-5. **Repeat but for a habits view user_command**
+5. **Repeat  2-4 but for a habits**
 
 ## Requirements
 
 - A TickTick account
 - go
-- make
+- just 
 
 ### Notes on local development
 
