@@ -1,6 +1,7 @@
 # ticktick.nvim
 
-A Neovim plugin for interacting with the TickTick API directly from your editor.
+A Neovim lua plugin using a go server to interact with the TickTick API directly
+from neovim.
 
 > ⚠️ **Disclaimer**  
 > This is an unofficial plugin.  
@@ -11,10 +12,10 @@ A Neovim plugin for interacting with the TickTick API directly from your editor.
 
 What features do I want?
 
+- [ ] manage tasks (crud operations)
+- [ ] ability to see different lists in their own view 
 - [ ] habit check in
-- [ ] manage tasks (create, read, update, delete)
-- [ ] each task list will have a tab of its own
-- [ ] handle api key and storage through neovim, and not deal with .env files
+- [ ] filtering / grep of tasks
 
 If I do the above that will be a good enough proof of concept for me.
 
@@ -23,32 +24,24 @@ If I do the above that will be a good enough proof of concept for me.
 This will act as my checklist on the technical road map and how I am going to
 implement the above.
 
-1. **Access token**
+1. **Access token** ✅
 
-There needs to be a way to input client_id and client_secret that you get from
-the (ticktick development center)[https://developer.ticktick.com/manage]. This
-is required to get the access token and do anything with the api so lets start
-with that. This is tricky since I cant just add it as an opt in `setup()` since
-that will usually get committed to user's dotfiles. It will have to be handled
-on client and then stored on disk, outside the dotfiles, most likely
-`XDG_DATA_DIR`.
+Access token is able to be retrieved and saved to disk by adding the client ID
+and secret to a pop up menu in neovim.
 
-2. **Start on list view user_command**
+2. **fetch all available tasks and display them on a new buffer**
 
-After Im able to get the access to the access token then I should get all the
-lists (called projects on the api docs) and make a ui to show the different 
-lists. Which I am thinking of doing one "tab" per list (a tab just being a
-highlighted title with a list view), on a new window.
-
-3. **Fetch tasks that belong to each list**
+3. **Fetch tasks that belong to a specific list**
 
 4. **Add check box  and actions on tasks**
 
-5. **Repeat but for a habits view user_command**
+5. **Repeat  2-4 but for a habits**
 
 ## Requirements
 
 - A TickTick account
+- go
+- just 
 
 ### Notes on local development
 
@@ -66,7 +59,7 @@ is what I am using. I made a symlink from this dir to
 `~/.local/share/nvim/site/pack/personal/start/ticktick.nvim`. Now it gets loaded
 automatically.
 
-Run the script [./link.sh](./link.sh) to get started with local development.
-Make sure to run the script at the root of this repo, it uses `pwd`.
+Run `just link` to get started with local development. Make sure to run the
+script at the root of this repo, it uses `pwd`.
 
 [^1]: https://github.com/neovim/neovim/issues/34765
