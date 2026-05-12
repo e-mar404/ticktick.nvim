@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"log"
 	"net"
 	"net/http"
 	"net/rpc"
@@ -14,20 +13,22 @@ import (
 var mh codec.MsgpackHandle
 
 func startRPCServer() {
-	rpc.Register(NewAuthService())
-
-	log.Printf("listening on %s\n", RPC_PORT)
+	l.Info("main rpc server started", "port", RPC_PORT)
 	listener, err := net.Listen("tcp", RPC_PORT)
 	if err != nil {
-		log.Fatalln("Error listening: ", err)
+		l.Fatalf("could not listen to port: %v\n", err)
 	}
 	defer listener.Close()
+
+	// TODO: there needs to be a different place were the different structs/services get registered
+	l.Debug("service registered", "service", "Auth")
+	rpc.Register(NewAuthService())
 
 	for {
 		conn, err := listener.Accept()
 
 		if err != nil {
-			log.Fatalln("Error accepting connection: ", err)
+			l.Fatalf("Error accepting connection: %v\n", err)
 		}
 
 		rpcCodec := codec.MsgpackSpecRpc.ServerCodec(conn, &mh)
@@ -45,9 +46,11 @@ func startCallbackServer(callback chan TickTickOAuthRes, state string) {
 	}
 
 	mux.HandleFunc("/callback", func(w http.ResponseWriter, r *http.Request) {
+		l.Debug("handling /callback request")
+
 		code := r.URL.Query().Get("code")
 		if code == "" {
-			log.Printf("no code found on the redirect_uri\n")
+			l.Error("%v\n", ErrNoCodeProvided)
 
 			callback <- TickTickOAuthRes{
 				Err: ErrNoCodeProvided,
@@ -58,7 +61,7 @@ func startCallbackServer(callback chan TickTickOAuthRes, state string) {
 
 		callbackState := r.URL.Query().Get("state")
 		if callbackState != state || callbackState == "" {
-			log.Printf("incorrect state. Expected: %s, got: %s\n", state, callbackState)
+			l.Errorf("incorrect state. Expected: %s, got: %s\n", state, callbackState)
 
 			callback <- TickTickOAuthRes{
 				Err: ErrStateMismatch,
@@ -67,7 +70,7 @@ func startCallbackServer(callback chan TickTickOAuthRes, state string) {
 			w.WriteHeader(http.StatusBadRequest)
 		}
 
-		log.Printf("code: %s, state: %s\n", code, callbackState)
+		l.Debug("callback params found", "code", code, "state", state)
 
 		callback <- TickTickOAuthRes{
 			Code: code,
@@ -80,14 +83,15 @@ func startCallbackServer(callback chan TickTickOAuthRes, state string) {
 		w.Write(res)
 
 		go func() {
+			l.Info("shutting down callback server")
 			srv.Shutdown(context.Background())
 		}()
 	})
 
-	log.Printf("callback server started on %s\n", CALLBACK_PORT)
+	l.Info("callback server started", "port", CALLBACK_PORT)
 	if err := srv.ListenAndServe(); err != nil {
 		if err != http.ErrServerClosed {
-			log.Printf("error on callback server: %v\n", err)
+			l.Printf("error on callback server: %v\n", err)
 		}
 	}
 }

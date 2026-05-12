@@ -9,8 +9,9 @@ import (
 
 func openURL(url string) error {
 	var baseCmd string
+	var msg string
 
-	switch runtime.GOOS {
+	switch msg = runtime.GOOS; msg {
 	case "darwin":
 		baseCmd = "open"
 	case "windows":
@@ -20,6 +21,7 @@ func openURL(url string) error {
 		baseCmd = "xdg-open"
 	}
 
+	l.Debug("opening url", "url", url, "GOOS", msg)
 	return exec.Command(baseCmd, url).Run()
 }
 

@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"log"
 	"os"
 
 	"github.com/adrg/xdg"
@@ -23,7 +22,7 @@ type AuthState struct {
 func (aStore *AuthStore) save(state AuthState) error {
 	data, err := json.MarshalIndent(state, "", "  ")
 	if err != nil {
-		log.Printf("unable to marshal obj: %v\n", err)
+		l.Errorf("unable to marshal obj: %v\n", err)
 		return err
 	}
 
@@ -33,7 +32,7 @@ func (aStore *AuthStore) save(state AuthState) error {
 func NewAuthStore() *AuthStore {
 	path, err := xdg.DataFile("tickgo/auth_store.json")
 	if err != nil {
-		log.Printf("auth store not fully loaded, path is blank: %v\n", err)
+		l.Errorf("auth store not fully loaded: %v\n", err)
 		return nil
 	}
 

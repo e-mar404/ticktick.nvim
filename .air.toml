@@ -6,7 +6,7 @@ testdata_dir = "testdata"
 tmp_dir = "tmp"
 
 [build]
-  args_bin = ["-rpcPort=:8080", "-callbackPort=:9090"]
+  args_bin = ["-rpcPort=:8080", "-callbackPort=:9090", "-v"]
   bin = "./tmp/server"
   cmd = "go build -C tickgo -o ../tmp/server ."
   delay = 1000

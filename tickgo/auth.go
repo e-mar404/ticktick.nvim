@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"log"
 	"net/http"
 	"net/url"
 )
@@ -47,7 +46,7 @@ func (a *Auth) Login(args *AuthArgs, reply *bool) error {
 
 	if err := openOAuthPage(args.ClientID, state); err != nil {
 		*reply = false
-		log.Printf("unable to open OAuth Page: %v\n", err)
+		l.Errorf("unable to open OAuth Page: %v\n", err)
 	}
 
 	callback := make(chan TickTickOAuthRes)
@@ -61,12 +60,15 @@ func (a *Auth) Login(args *AuthArgs, reply *bool) error {
 	}
 
 	tokenRes := fetchAccessToken(args.ClientID, args.ClientSecret, oauthRes.Code)
-	log.Printf("got access token: %s\n", tokenRes.AccessToken)
+	l.Debug("successfully retrieved access token", "access_token", tokenRes.AccessToken)
 
 	if tokenRes.Error != "" {
 		*reply = false
 		fmt.Printf("[Auth.Login] set result on reply to %v\n", *reply)
-		log.Printf("Err: %s\nDesc: %s\n", tokenRes.Error, tokenRes.ErrorDescription)
+		l.Error("Received error from last OAuth step",
+			"Err", tokenRes.Error,
+			"Description", tokenRes.ErrorDescription,
+		)
 		return fmt.Errorf("%s", tokenRes.Error)
 	}
 
@@ -78,12 +80,12 @@ func (a *Auth) Login(args *AuthArgs, reply *bool) error {
 	}
 
 	if err := a.store.save(authState); err != nil {
-		log.Printf("unable to save login credentials: %v\n", err)
+		l.Errorf("unable to save login credentials: %v\n", err)
 		return err
 	}
 
 	*reply = true
-	log.Printf("[Auth.Login] set result on reply to %v\n", *reply)
+	l.Info("[Auth.Login] responded", "reply", *reply)
 
 	return nil
 }
