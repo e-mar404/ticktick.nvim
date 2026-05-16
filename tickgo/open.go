@@ -7,7 +7,7 @@ import (
 	"runtime"
 )
 
-func openURL(url string) error {
+func openURL(rawUrl string) error {
 	var baseCmd string
 	var msg string
 
@@ -21,18 +21,6 @@ func openURL(url string) error {
 		baseCmd = "xdg-open"
 	}
 
-	l.Debug("opening url", "url", url, "GOOS", msg)
-	return exec.Command(baseCmd, url).Run()
-}
-
-func openOAuthPage(clientID, state string) error {
-	redirectURI := fmt.Sprintf("http://127.0.0.1%s/callback", CALLBACK_PORT)
-	urlValues := url.Values{}
-	urlValues.Add("client_id", clientID)
-	urlValues.Add("scope", "tasks:write tasks:read")
-	urlValues.Add("state", state)
-	urlValues.Add("redirect_uri", redirectURI)
-	urlValues.Add("response_type", "code")
-
-	return openURL(TickTickOAuthURL + "/authorize?" + urlValues.Encode())
+	logger.Debug("opening url", "url", rawUrl, "GOOS", msg)
+	return exec.Command(baseCmd, rawUrl).Run()
 }

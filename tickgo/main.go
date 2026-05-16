@@ -4,9 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
-	"strings"
 
-	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/log"
 )
 
@@ -14,7 +12,8 @@ var (
 	RPC_PORT      string
 	CALLBACK_PORT string
 	verbose       bool
-	l             *log.Logger
+	logger        *log.Logger
+	styles        = newStyles()
 )
 
 func init() {
@@ -24,41 +23,20 @@ func init() {
 	flag.Parse()
 
 	if RPC_PORT == "" || CALLBACK_PORT == "" {
-		fmt.Printf("Both flags rpcPort and callbackPort are required\n")
+		log.Error("Both flags rpcPort and callbackPort are required\n")
 		os.Exit(1)
 	}
 
-	l = log.New(os.Stderr)
-	l.SetReportCaller(true)
-	l.SetReportTimestamp(true)
-
-	styles := log.DefaultStyles()
-
-	styles.Levels[log.DebugLevel] = lipgloss.NewStyle().
-		SetString(strings.ToUpper(log.DebugLevel.String())).
-		Bold(true).
-		MaxWidth(5).
-		Foreground(lipgloss.Color("63"))
-
-	styles.Levels[log.ErrorLevel] = lipgloss.NewStyle().
-		SetString(strings.ToUpper(log.DebugLevel.String())).
-		Bold(true).
-		MaxWidth(5).
-		Foreground(lipgloss.Color("63"))
-
-	styles.Levels[log.FatalLevel] = lipgloss.NewStyle().
-		SetString(strings.ToUpper(log.DebugLevel.String())).
-		Bold(true).
-		MaxWidth(5).
-		Foreground(lipgloss.Color("63"))
-
-	l.SetStyles(styles)
+	logger = log.New(os.Stderr)
+	logger.SetReportCaller(true)
+	logger.SetReportTimestamp(true)
+	logger.SetStyles(styles.LoggerStyles)
 
 	if verbose {
-		l.SetLevel(log.DebugLevel)
+		logger.SetLevel(log.DebugLevel)
 	}
 
-	l.Debug("ports set from flags",
+	logger.Debug("ports set from flags",
 		"rpc_port", RPC_PORT,
 		"callback_port", CALLBACK_PORT,
 	)

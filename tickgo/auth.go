@@ -50,7 +50,7 @@ func (a *Auth) Login(args *AuthArgs, reply *bool) error {
 
 	if err := openOAuthPage(args.ClientID, state); err != nil {
 		*reply = false
-		l.Errorf("unable to open OAuth Page: %v\n", err)
+		logger.Errorf("unable to open OAuth Page: %v\n", err)
 	}
 
 	callback := make(chan TickTickOAuthRes)
@@ -59,17 +59,17 @@ func (a *Auth) Login(args *AuthArgs, reply *bool) error {
 
 	if oauthRes.Err != nil {
 		*reply = false
-		fmt.Printf("[Auth.Login] set result on reply to %v\n", *reply)
+		logger.Debug("reply set", "reply", *reply)
 		return oauthRes.Err
 	}
 
 	tokenRes := fetchAccessToken(args.ClientID, args.ClientSecret, oauthRes.Code)
-	l.Debug("successfully retrieved access token", "access_token", tokenRes.AccessToken)
+	logger.Debug("successfully retrieved access token", "access_token", tokenRes.AccessToken)
 
 	if tokenRes.Error != "" {
 		*reply = false
-		fmt.Printf("[Auth.Login] set result on reply to %v\n", *reply)
-		l.Error("Received error from last OAuth step",
+		logger.Debug("reply set", "reply", *reply)
+		logger.Error("Received error from last OAuth step",
 			"Err", tokenRes.Error,
 			"Description", tokenRes.ErrorDescription,
 		)
@@ -84,12 +84,12 @@ func (a *Auth) Login(args *AuthArgs, reply *bool) error {
 	}
 
 	if err := a.store.save(authState); err != nil {
-		l.Errorf("unable to save login credentials: %v\n", err)
+		logger.Errorf("unable to save login credentials: %v\n", err)
 		return err
 	}
 
 	*reply = true
-	l.Info("[Auth.Login] responded", "reply", *reply)
+	logger.Info("[Auth.Login] responded", "reply", *reply)
 
 	return nil
 }
@@ -109,6 +109,18 @@ func generateState() string {
 	buf := make([]byte, 32)
 	rand.Read(buf)
 	return base64.URLEncoding.EncodeToString(buf)
+}
+
+func openOAuthPage(clientID, state string) error {
+	redirectURI := fmt.Sprintf("http://127.0.0.1%s/callback", CALLBACK_PORT)
+	urlValues := url.Values{}
+	urlValues.Add("client_id", clientID)
+	urlValues.Add("scope", "tasks:write tasks:read")
+	urlValues.Add("state", state)
+	urlValues.Add("redirect_uri", redirectURI)
+	urlValues.Add("response_type", "code")
+
+	return openURL(TickTickOAuthURL + "/authorize?" + urlValues.Encode())
 }
 
 func fetchAccessToken(clientID, clientSecret, code string) TickTickTokenRes {
