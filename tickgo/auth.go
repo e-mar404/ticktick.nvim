@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"os"
 )
 
 const (
@@ -24,7 +25,7 @@ type Auth struct {
 	store *AuthStore
 }
 
-type AuthArgs struct {
+type BaseCredentials struct {
 	ClientID     string `json:"client_id"`
 	ClientSecret string `json:"client_secret"`
 }
@@ -45,7 +46,45 @@ func init() {
 	rpcServices["Auth"] = NewAuthService()
 }
 
-func (a *Auth) Login(args *AuthArgs, reply *bool) error {
+func (a *Auth) CredentialsExist(_ any, reply *bool) error {
+	logger.Info("checking to see if there are existing credentials")
+
+	state := &AuthState{}
+	if err := a.store.load(state); err != nil {
+		*reply = false
+		logger.Error("unable to load auth state", "error", err)
+
+		if errors.Is(err, os.ErrNotExist) {
+			return nil
+		}
+
+		return err
+	}
+
+	logger.Info("credentials found")
+	*reply = true
+	return nil
+}
+
+func (a *Auth) RetrieveCredentials(_ any, reply *BaseCredentials) error {
+	state := &AuthState{}
+
+	if err := a.store.load(state); err != nil {
+		logger.Error("Unable to retrieve credentials", "error", err)
+		return err
+	}
+
+	creds := &BaseCredentials{
+		ClientID:     state.ClientID,
+		ClientSecret: state.ClientSecret,
+	}
+
+	*reply = *creds
+
+	return nil
+}
+
+func (a *Auth) Login(args *BaseCredentials, reply *bool) error {
 	state := generateState()
 
 	if err := openOAuthPage(args.ClientID, state); err != nil {

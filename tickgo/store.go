@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"io"
 	"os"
 
 	"github.com/adrg/xdg"
@@ -27,6 +28,21 @@ func (aStore *AuthStore) save(state AuthState) error {
 	}
 
 	return os.WriteFile(aStore.path, data, 0644)
+}
+
+func (aStore *AuthStore) load(state *AuthState) error {
+	file, err := os.Open(aStore.path)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	data, err := io.ReadAll(file)
+	if err != nil {
+		return err
+	}
+
+	return json.Unmarshal(data, state)
 }
 
 func NewAuthStore() *AuthStore {

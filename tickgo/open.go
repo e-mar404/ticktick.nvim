@@ -1,8 +1,6 @@
 package main
 
 import (
-	"fmt"
-	"net/url"
 	"os/exec"
 	"runtime"
 )
