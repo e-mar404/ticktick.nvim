@@ -1,15 +1,15 @@
 package main
 
 import (
-	"io"
+	"encoding/json"
 	"net/http"
 )
 
 // TODO: See if there is a way to call this just Project
-type ProjectService struct{}
+type Project struct{}
 
 // TODO: see if I can change the name to ProjectList or something similar to free up the 'Project' name
-type Project struct {
+type ProjectList []struct {
 	ID   string `json:"id"`
 	Name string `json:"name"`
 }
@@ -19,7 +19,7 @@ func init() {
 	rpcServices["Project"] = NewProjectService()
 }
 
-func (p *ProjectService) GetAll(args *any, reply *any) error {
+func (p *Project) GetAll(args *any, reply *ProjectList) error {
 	state := &AuthState{}
 	if err := NewAuthStore().load(state); err != nil {
 		logger.Error("Could not retrieve saved credentials", "error", err)
@@ -44,20 +44,18 @@ func (p *ProjectService) GetAll(args *any, reply *any) error {
 
 	defer res.Body.Close()
 
-	body, err := io.ReadAll(res.Body)
-	if err != nil {
-		logger.Error("could not read body of response", "error", err)
+	decoder := json.NewDecoder(res.Body)
+	if err := decoder.Decode(reply); err != nil {
+		logger.Error("could not decode response", "error", err)
 	}
 
 	// TODO: should save all of this into a ProjectResponse struct or something similar
-	logger.Debug("got response", "body", string(body))
-
-	*reply = string(body)
+	logger.Debug("sending reply", "projects", reply)
 
 	return nil
 }
 
-func NewProjectService() *ProjectService {
+func NewProjectService() *Project {
 	// TODO: do any setup required
-	return &ProjectService{}
+	return &Project{}
 }
